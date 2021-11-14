@@ -1,0 +1,14 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "foo",
+      "body": "bar"
+    },
+    {
+      "id": 2,
+      "title": "hoge",
+      "body": "piyo"
+    }
+  ]
+}
