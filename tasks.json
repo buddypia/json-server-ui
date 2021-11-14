@@ -1,0 +1,97 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "type": "npm",
+            "script": "client",
+            "isBackground": true,
+            "label": "npm: client",
+            "detail": "webpack-dev-server --config webpack.config.js --mode development --devtool inline-source-map --hot -d",
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "ˆ$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "express-react-typescript@4.0.0...",
+                    "endsPattern": ".*Compiled .*"
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "npm",
+            "script": "client:start",
+            "label": "npm: client:start",
+            "detail": "react-scripts start",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "ˆ$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Compiling...",
+                    "endsPattern": "Compiled .*"
+                }
+            }
+        },
+        {
+            "type": "docker-build",
+            "label": "docker-build",
+            "platform": "node",
+            "dockerBuild": {
+                "dockerfile": "${workspaceFolder}/Dockerfile",
+                "context": "${workspaceFolder}",
+                "pull": true
+            }
+        },
+        {
+            "type": "docker-run",
+            "label": "docker-run: release",
+            "dependsOn": [
+                "docker-build"
+            ],
+            "platform": "node"
+        },
+        {
+            "type": "docker-run",
+            "label": "docker-run: debug",
+            "dependsOn": [
+                "Run docker-compose up"
+            ],
+            "dockerRun": {
+                "env": {
+                    "DEBUG": "*",
+                    "NODE_ENV": "development"
+                }
+            },
+            "node": {
+                "enableDebugging": true
+            }
+        },
+        {
+            "label": "Run docker-compose up",
+            "type": "docker-compose",
+            "dockerCompose": {
+              "up": {
+                "detached": true,
+                "build": true,
+                "services": ["proxy", "coronahostipalsummary", "mongodb"]
+              },
+              "files": [
+                "${workspaceFolder}/docker-compose.debug.yml"
+              ]
+            }
+        },
+    ]
+}

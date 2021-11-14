@@ -1,0 +1,51 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "エディタで開いている(アクティブな).tsファイルをデバッグ",
+        "type": "pwa-node",
+        "request": "launch",
+        "runtimeArgs": [
+          "--nolazy",
+          "-r",
+          "ts-node/register"
+        ],
+        "args": [
+          "${file}",
+          "--transpile-only"
+        ],
+        "skipFiles": [
+          "<node_internals>/**",
+          "node_modules/**"
+        ],
+        "env": {
+          "TS_NODE_PROJECT": "${workspaceFolder}/tsconfig.server.json"
+        }
+      },
+      {
+        "type": "pwa-node",
+        "request": "attach",
+        "name": "サーバー用実行中のnodeプログラムにアタッチしてデバッグ",
+        "processId": "${command:PickProcess}"
+      },
+      {
+        "name": "Launch Chrome",
+        "type": "pwa-chrome",
+        "request": "launch",
+        "preLaunchTask": "npm: client",
+        "url": "http://localhost:3000",
+        "sourceMaps": true,
+        "webRoot": "${workspaceFolder}/public",
+        "sourceMapPathOverrides": {
+          "webpack:///./*": "${webRoot}/src/client/*"
+        }
+      },
+      {
+        "name": "Docker Node.js Launch",
+        "type": "docker",
+        "request": "launch",
+        "preLaunchTask": "docker-run: debug",
+        "platform": "node"
+      }
+    ]
+}
