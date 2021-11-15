@@ -7,6 +7,10 @@ const router = jsonServer.router('db.json')
 const middlewares = jsonServer.defaults()
 require('dotenv').config()
 
+
+const host = process.env.HOST || 'localhost';
+const port = process.env.PORT || 3000;
+
 server.use(cors())
 server.use(express.static('public'));
 
@@ -18,7 +22,7 @@ server.use(middlewares)
 server.use(jsonServer.bodyParser)
 
 server.get('/urls', (req, res) => {
-  const root = `http://${process.env.HOST}:${process.env.PORT}`
+  const root = `http://${host}:${port}`
   console.log(router.db.getState());
   const urls = [];
   for (const prop in router.db.getState()) {
@@ -31,7 +35,7 @@ server.get('/urls', (req, res) => {
 });
 
 server.get('/bulk-urls', (req, res) => {
-  const root = `http://${process.env.HOST}:${process.env.PORT}`
+  const root = `http://${host}:${port}`
   const urls = [];
   for (const prop in router.db.getState()) {
     const url = `${root}/${prop}`;
@@ -76,6 +80,5 @@ server.use(router);
 //   console.log(`route method: ${route.method.toUpperCase()}, path: ${route.path}`);
 // });
 
-const port = Number(process.env.PORT) || 3000;
-console.log(`port: ${port}`);
+console.log(`API Root http://${host}:${port}`);
 server.listen(port);
