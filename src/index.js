@@ -21,6 +21,10 @@ server.use(middlewares)
 // You can use the one used by JSON Server
 server.use(jsonServer.bodyParser)
 
+server.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+}); 
+
 server.get('/urls', (req, res) => {
   const root = `http://${host}:${port}`
   console.log(router.db.getState());

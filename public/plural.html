@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>JSON Editor Interactive(Bulk)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.6.0.slim.min.js"
+      integrity="sha256-u7e5khyithlIdTpu22PHhENmPcRdFiHRjhAuHcs05RI="
+      crossorigin="anonymous"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://use.fontawesome.com/releases/v5.6.1/css/all.css"
+    />
+  </head>
+  <body>
+    <div class="container grid-xl">
+      <ul class="nav nav-tabs my-3">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Singular Editor</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link active" href="/plural.html">Plural Editor</a>
+        </li>
+        <span
+          class="
+            ml-auto
+            text-nowrap
+            border border-top-0 border-left-0 border-right-0
+          "
+        >
+          <a
+            href="direct-link"
+            class="btn btn-sm btn-outline-primary"
+            role="button"
+            aria-pressed="true"
+            >Direct Link</a
+          >
+          <a
+            href="/"
+            class="btn btn-sm btn-outline-primary"
+            role="button"
+            aria-pressed="true"
+            >Reset</a
+          >
+        </span>
+      </ul>
+
+      <div class="row columns md:flex">
+        <div class="col-8 col-md-8 w-8/12">
+          <h1>Plural API JSON Editor</h1>
+          <p>Below is the editor generated from the JSON Schema.</p>
+          <label>Request URI(Bulk)</label>
+          <select
+            class="form-control je-switcher"
+            style="width: 100%"
+            id="url"
+          ></select>
+          <div id="json-editor-form"></div>
+        </div>
+        <div class="col-4 col-md-4 w-4/12">
+          <h2>JSON Output</h2>
+          <p>
+            You can also make changes to the JSON here and set the value in the
+            editor by clicking "Replace Bulk Resources"
+          </p>
+          <label for="output-textarea"></label>
+          <textarea
+            id="validate-textarea"
+            readonly
+            disabled
+            class="form-control"
+          ></textarea>
+          <textarea
+            id="output-textarea"
+            rows="15"
+            style="width: 100%; font-family: monospace"
+            class="form-control"
+          ></textarea>
+          <button class="btn btn-primary btn-block" id="setvalue">
+            Replace Resources(Bulk)
+          </button>
+          <h2 class="mt-5">Schema</h2>
+          <label for="schema-textarea"
+            >You can change the schema and see how the generated form looks.
+            After you make changes, click "Update Schema"</label
+          >
+          <button class="btn btn-primary btn-block" id="setschema">
+            Update Schema
+          </button>
+          <textarea
+            id="schema-textarea"
+            rows="30"
+            style="width: 100%; font-family: monospace"
+            class="form-control"
+          ></textarea>
+        </div>
+      </div>
+    </div>
+    <script>
+      $(document).ready(function () {
+        axios.get("http://localhost:3000/bulk-urls").then(function (response) {
+          const urls = response.data || [];
+          urls.forEach((url) =>
+            $("#url").append($("<option>").html(url).val(url))
+          );
+
+          console.log(`urls: ${urls}`);
+          getResource(urls[0], (resource) => jsoneditor.setValue(resource));
+        });
+      });
+
+      $(document).on("change", "select#url", function () {
+        var url = $(this).val();
+
+        getResource(url, (data) => jsoneditor.setValue(data));
+      });
+
+      const defaultSchema = {};
+
+      // parse url -> merge options -> refreshUI() -> initJsoneditor() -> direct link
+
+      /* ------------------------------------------------------------------- data */
+
+      let data = {};
+
+      let defaultOptions = {
+        iconlib: "fontawesome5",
+        object_layout: "normal",
+        schema: defaultSchema,
+        show_errors: "interaction",
+        theme: "bootstrap4",
+      };
+
+      let jsoneditor = null;
+
+      const head = document.getElementsByTagName("head")[0];
+      const jsonEditorForm = document.querySelector("#json-editor-form");
+      const outputTextarea = document.querySelector("#output-textarea");
+      const schemaTextarea = document.querySelector("#schema-textarea");
+      const setSchema = document.querySelector("#setschema");
+      const setValue = document.querySelector("#setvalue");
+      const validateTextarea = document.querySelector("#validate-textarea");
+
+      /* -------------------------------------------------------------- parse url */
+
+      const parseUrl = () => {
+        const url = window.location.search;
+        const queryParamsString = url.substring(1, url.length);
+        const queryParams = queryParamsString.split("&");
+
+        if (queryParamsString.length) {
+          queryParams.forEach((queryParam) => {
+            const splittedParam = queryParam.split("=");
+            const param = splittedParam[0];
+            const value = splittedParam[1];
+
+            // data query param
+            if (param === "data") {
+              // compress schema and value
+              try {
+                data = JSON.parse(LZString.decompressFromBase64(value));
+              } catch (reason) {}
+            }
+          });
+        }
+
+        initJsoneditor();
+      };
+
+      /* --------------------------------------------------------- initJsoneditor */
+
+      const initJsoneditor = () => {
+        // destroy old JSONEditor instance if exists
+        if (jsoneditor) {
+          jsoneditor.destroy();
+        }
+
+        // new instance of JSONEditor
+        jsoneditor = new window.JSONEditor(jsonEditorForm, defaultOptions);
+
+        // listen for changes
+        jsoneditor.on("change", function () {
+          // output
+          let json = jsoneditor.getValue();
+          outputTextarea.value = JSON.stringify(json, null, 2);
+
+          // validate
+          const valid = validateCheck();
+          $("#setvalue").prop("disabled", !valid);
+        });
+        updateDirectLink();
+      };
+
+      const validateCheck = () => {
+        const validationErrors = jsoneditor.validate();
+        showValidateResult(validationErrors);
+        return validationErrors.length === 0;
+      };
+
+      const isValidate = () => {
+        const validationErrors = jsoneditor.validate();
+        return validationErrors.length === 0;
+      };
+
+      const showValidateResult = (validationErrors) => {
+        if (validationErrors.length > 0) {
+          validateTextarea.value = JSON.stringify(validationErrors, null, 2);
+        } else {
+          validateTextarea.value = "valid";
+        }
+      };
+
+      /* ------------------------------------------------------- updateDirectLink */
+
+      const updateDirectLink = () => {
+        let url = window.location.href.replace(/\?.*/, "");
+        url += "?data=";
+        url += LZString.compressToBase64(JSON.stringify(data));
+        $("#direct-link").attr("href", url);
+      };
+
+      const getResource = (url, callback) => {
+        axios.get(url).then(function (response) {
+          console.log(`response data: ${response.data}`);
+
+          if (callback != null) callback(response.data);
+        });
+      };
+
+      /* -------------------------------------------------------- event listeners */
+
+      setValue.addEventListener("click", function () {
+        try {
+          jsoneditor.setValue(JSON.parse(outputTextarea.value));
+        } catch (e) {
+          console.error(e.message);
+          validateTextarea.value = "invalid";
+          return;
+        }
+
+        const valid = validateCheck();
+        if (!valid) return;
+
+        const urlEl = document.getElementById("url");
+        if (urlEl == undefined || urlEl == null) {
+          console.log("url == undefined || url == null");
+          return;
+        }
+
+        const url = urlEl.value;
+
+        axios.post(url, outputTextarea.value, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      });
+
+      setSchema.addEventListener("click", function () {
+        try {
+          data.options.schema = JSON.parse(schemaTextarea.value);
+        } catch (e) {
+          alert("Invalid Schema: " + e.message);
+          return;
+        }
+        initJsoneditor();
+      });
+
+      parseUrl();
+    </script>
+  </body>
+</html>
