@@ -106,7 +106,7 @@
     </div>
     <script>
       $(function () {
-        axios.get("http://localhost:3000/urls").then(function (response) {
+        axios.get("localhost:${PORT}/urls").then(function (response) {
           const urls = response.data || [];
           urls.forEach((url) =>
             $("#url").append($("<option>").html(url).val(url))

@@ -4,7 +4,10 @@
   "description": "json-editor + json-server based editor",
   "main": "src/index.js",
   "scripts": {
-    "start": "NODE_ENV=development nodemon src/index.js",
+    "start": "npm run build && nodemon src/index.js",
+    "build": "npm run build-index && npm run build-plural",
+    "build-index": "sed -i -e \"s/\\${PORT}/$PORT/g\" ./public/index.html",
+    "build-plural": "sed -i -e \"s/\\${PORT}/$PORT/g\" ./public/plural.html",
     "test": "jest"
   },
   "keywords": [],
