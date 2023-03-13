@@ -106,7 +106,7 @@
     </div>
     <script>
       $(document).ready(function () {
-        axios.get("http://localhost:${PORT}/bulk-urls").then(function (response) {
+        axios.get("${URL_SCHEME}://${FQDN}:${PORT}/bulk-urls").then(function (response) {
           const urls = response.data || [];
           urls.forEach((url) =>
             $("#url").append($("<option>").html(url).val(url))

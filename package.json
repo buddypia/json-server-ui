@@ -6,8 +6,8 @@
   "scripts": {
     "start": "npm run build && nodemon src/index.js",
     "build": "npm run build-index && npm run build-plural",
-    "build-index": "sed -i -e \"s/\\${PORT}/$PORT/g\" ./public/index.html",
-    "build-plural": "sed -i -e \"s/\\${PORT}/$PORT/g\" ./public/plural.html",
+    "build-index": "sed -i -e \"s/\\${URL_SCHEME}/$URL_SCHEME/g; s/\\${FQDN}/$FQDN/g; s/\\${PORT}/$PORT/g\" ./public/index.html",
+    "build-plural": "sed -i -e \"s/\\${URL_SCHEME}/$URL_SCHEME/g; s/\\${FQDN}/$FQDN/g; s/\\${PORT}/$PORT/g\" ./public/plural.html",
     "test": "jest"
   },
   "keywords": [],
